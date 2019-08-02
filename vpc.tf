@@ -74,6 +74,20 @@ resource "aws_internet_gateway" "gw" {
     Name = "VPC IGW"
   }
 }
+#eip creation
+resource "aws_eip" "eip" {
+  vpc = true
+}
+
+#NAT GATWAY
+resource "aws_nat_gateway" "gw" {
+  allocation_id = aws_eip.eip.id
+  subnet_id     = aws_subnet.public-subnet-01.id
+
+  tags = {
+    Name = "gw NAT"
+  }
+}
 
 resource "aws_route_table" "web-public-rt" {
   vpc_id = aws_vpc.default.id
@@ -81,6 +95,18 @@ resource "aws_route_table" "web-public-rt" {
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw.id
+  }
+
+  tags = {
+    Name = "Public Subnet RT"
+  }
+}
+resource "aws_route_table" "web-private-rt" {
+  vpc_id = aws_vpc.default.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.gw.id
   }
 
   tags = {
@@ -97,5 +123,24 @@ resource "aws_route_table_association" "web-public-rt-01" {
 resource "aws_route_table_association" "web-public-rt-02" {
   subnet_id      = aws_subnet.public-subnet-02.id
   route_table_id = aws_route_table.web-public-rt.id
+}
+
+
+# Assign route table to the private Subnet
+resource "aws_route_table_association" "web-private-rt-01" {
+  subnet_id      = aws_subnet.private-subnet-01.id
+  route_table_id = aws_route_table.web-private-rt.id
+}
+resource "aws_route_table_association" "web-private-rt-02" {
+  subnet_id      = aws_subnet.private-subnet-02.id
+  route_table_id = aws_route_table.web-private-rt.id
+}
+resource "aws_route_table_association" "web-private-rt-03" {
+  subnet_id      = aws_subnet.private-subnet-03.id
+  route_table_id = aws_route_table.web-private-rt.id
+}
+resource "aws_route_table_association" "web-private-rt-04" {
+  subnet_id      = aws_subnet.private-subnet-04.id
+  route_table_id = aws_route_table.web-private-rt.id
 }
 
