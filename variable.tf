@@ -25,3 +25,13 @@ variable "public_route_table" {
 variable "private_route_table" {
     default = ["01","02","03","04"]
 }
+
+
+
+
+variable "amis" {
+    description = "AMIs by region"
+    default = {
+        ap-southeast-1 = "ami-05c1fa8df71875112 " # Ubuntu Server 18.04 LTS (HVM)
+    } 
+}
