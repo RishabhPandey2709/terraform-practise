@@ -1,72 +1,34 @@
 resource "aws_vpc" "default" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-
   tags = {
     Name = "test-vpc"
   }
 }
 
-resource "aws_subnet" "public-subnet-01" {
+resource "aws_subnet" "public-subnets" {
+  count = length(var.public_azs)
   vpc_id            = aws_vpc.default.id
-  cidr_block        = var.public_subnet_cidr_1
-  availability_zone = "ap-southeast-1a"
+  cidr_block = element(var.public_cidr_blocks,count.index)
+  availability_zone = element(var.public_azs,count.index)
 
   tags = {
-    Name = "Web Public Subnet 01"
+    Name = "Web Public Subnet-${count.index+1}"
   }
 }
 
-resource "aws_subnet" "public-subnet-02" {
+resource "aws_subnet" "private-subnets" {
+  count = length(var.pvt_azs)
   vpc_id            = aws_vpc.default.id
-  cidr_block        = var.public_subnet_cidr_2
-  availability_zone = "ap-southeast-1b"
+  cidr_block = element(var.private_cidr_blocks,count.index)
+  availability_zone = element(var.pvt_azs,count.index)
 
   tags = {
-    Name = "Web Public Subnet 02"
+    Name = "app server Private Subnet-${count.index+1}"
   }
 }
 
-resource "aws_subnet" "private-subnet-01" {
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = var.private_subnet_cidr_1
-  availability_zone = "ap-southeast-1a"
-
-  tags = {
-    Name = "Database Private Subnet 01"
-  }
-}
-
-resource "aws_subnet" "private-subnet-02" {
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = var.private_subnet_cidr_2
-  availability_zone = "ap-southeast-1a"
-
-  tags = {
-    Name = "app server Private Subnet 01"
-  }
-}
-
-resource "aws_subnet" "private-subnet-03" {
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = var.private_subnet_cidr_3
-  availability_zone = "ap-southeast-1b"
-
-  tags = {
-    Name = "Database Private Subnet 02"
-  }
-}
-
-resource "aws_subnet" "private-subnet-04" {
-  vpc_id            = aws_vpc.default.id
-  cidr_block        = var.private_subnet_cidr_4
-  availability_zone = "ap-southeast-1b"
-
-  tags = {
-    Name = "app server Private Subnet 02"
-  }
-}
-
+# internet gateway creation
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.default.id
 
@@ -74,15 +36,16 @@ resource "aws_internet_gateway" "gw" {
     Name = "VPC IGW"
   }
 }
-#eip creation
+
+# elastic ip creation
 resource "aws_eip" "eip" {
   vpc = true
 }
 
-#NAT GATWAY
+# NAT GATWAY
 resource "aws_nat_gateway" "gw" {
   allocation_id = aws_eip.eip.id
-  subnet_id     = aws_subnet.public-subnet-01.id
+  subnet_id     = aws_subnet.public-subnets[0].id
 
   tags = {
     Name = "gw NAT"
@@ -115,32 +78,15 @@ resource "aws_route_table" "web-private-rt" {
 }
 
 # Assign route table to the public Subnet
-resource "aws_route_table_association" "web-public-rt-01" {
-  subnet_id      = aws_subnet.public-subnet-01.id
+resource "aws_route_table_association" "web-public-rt" {
+  count = length(var.public_route_table)
+  subnet_id      = aws_subnet.public-subnets[count.index].id
   route_table_id = aws_route_table.web-public-rt.id
 }
-
-resource "aws_route_table_association" "web-public-rt-02" {
-  subnet_id      = aws_subnet.public-subnet-02.id
-  route_table_id = aws_route_table.web-public-rt.id
-}
-
 
 # Assign route table to the private Subnet
-resource "aws_route_table_association" "web-private-rt-01" {
-  subnet_id      = aws_subnet.private-subnet-01.id
+resource "aws_route_table_association" "web-private-rt" {
+  count = length(var.private_route_table)
+  subnet_id      = aws_subnet.private-subnets[count.index].id
   route_table_id = aws_route_table.web-private-rt.id
 }
-resource "aws_route_table_association" "web-private-rt-02" {
-  subnet_id      = aws_subnet.private-subnet-02.id
-  route_table_id = aws_route_table.web-private-rt.id
-}
-resource "aws_route_table_association" "web-private-rt-03" {
-  subnet_id      = aws_subnet.private-subnet-03.id
-  route_table_id = aws_route_table.web-private-rt.id
-}
-resource "aws_route_table_association" "web-private-rt-04" {
-  subnet_id      = aws_subnet.private-subnet-04.id
-  route_table_id = aws_route_table.web-private-rt.id
-}
-
