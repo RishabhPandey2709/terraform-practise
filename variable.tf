@@ -29,9 +29,15 @@ variable "private_route_table" {
 
 
 
-variable "amis" {
+variable "ami" {
     description = "AMIs by region"
     default = {
-        ap-southeast-1 = "ami-05c1fa8df71875112 " # Ubuntu Server 18.04 LTS (HVM)
+        ap-southeast-1 = " ami-03b6f27628a4569c8 " # Ubuntu Server 18.04 LTS (HVM)
     } 
 }
+
+variable "EC2-ami" {
+    description = "AMIs by Ec2"
+    default = "ami-08fcd7e5213a5de61"
+}
+
